@@ -25,6 +25,8 @@ public:
 
     void handleRead();
     void handleClose();
+    void handleWrite();
+    void handleError();
 
 
 public:
@@ -33,7 +35,7 @@ private:
     // common.
     EventLoop* loop_;
     Socket* socket_;
-    enum StateE { kDisconnected, kConnected };
+    enum StateE { kDisconnected, kConnected, kConnecting };
     StateE state_;
     struct sockaddr_in peerAddr_;
     ConnectionCallback connectionCallback_;

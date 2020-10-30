@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package test;
+
+message ReqPlayerMessage {
+    int32 uid = 1;
+    string value = 2;
+}
+
+message InfPlayerMessage {
+    int32 uid = 1;
+    string value = 2;
+}

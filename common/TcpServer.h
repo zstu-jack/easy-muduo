@@ -25,18 +25,19 @@ public:
 public:
     void setConnectionCallback(const ConnectionCallback& cb){ connectionCallback_ = cb; }
     void setMessageCallback(const MessageCallback& cb){ messageCallback_ = cb; }
-    void setPkgDecodeCallback(const PkgDecodeCallback& cb){ pkgDecodeCallback = cb; }
+    void setPkgDecodeCallback(const PkgDecodeCallback& cb){ pkgDecodeCallback_ = cb; }
 
 private:
     void newConnection();
     void removeConnection(const TcpConnection* conn);
+    void impossibleEvent();
 
 private:
     EventLoop* loop_;
     int listen_port_;
     ConnectionCallback connectionCallback_;
     MessageCallback messageCallback_;
-    PkgDecodeCallback pkgDecodeCallback;
+    PkgDecodeCallback pkgDecodeCallback_;
     std::map<int , TcpConnection*> connectionMap_;   // fd->
     Socket* socket;
 };

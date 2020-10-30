@@ -4,14 +4,18 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cstring>
 #include "TcpConnection.h"
 
 TcpConnection::TcpConnection(EventLoop* loop, int sockfd, struct sockaddr_in& peerAddr){
     this->loop_ = loop;
     this->socket_ = new Socket(sockfd);
     this->peerAddr_ = peerAddr;
+    this->state_ = kConnected;
+
     this->socket_->setKeepAlive(true);
-    this->state_ = kConnected; // TODO: set flag later (once we can write)
+    this->socket_->setReuseAddr(true);
+    this->socket_->setReusePort(true);
 }
 TcpConnection::~TcpConnection(){
     delete socket_;
@@ -44,14 +48,27 @@ void TcpConnection::forceClose(){
 }
 
 void TcpConnection::handleRead(){
-    int n = read(socket_->fd(), read_buf, socket_buff_size - read_buf_index);
+    int n = read(socket_->fd(), read_buf + read_buf_index, socket_buff_size - read_buf_index);
     if (n > 0){
+        int pkg_index = 0;
         read_buf_index += n;
-        // TODO
-//        for(;;){
-//
-//
-//        }
+        for(;;){
+            int ret = pkgDecodeCallback_(read_buf + pkg_index, read_buf_index - pkg_index);
+            if(ret < 0){ // error
+               handleClose();
+               break;
+            }else if(ret == 0 || ret > read_buf_index - pkg_index){ // waiting for a full pkg.
+                break;
+            }else{
+                messageCallback_(this, read_buf + pkg_index, ret);
+                pkg_index += ret;
+            }
+        }
+        if(pkg_index != 0){
+            int size = read_buf_index - pkg_index;
+            std::memmove(read_buf, read_buf + pkg_index, size);
+            read_buf_index = size;
+        }
     }
     else if (n == 0){
         handleClose();
@@ -59,6 +76,12 @@ void TcpConnection::handleRead(){
 
     }
 }
+
+void TcpConnection::handleWrite(){
+
+
+}
+
 void TcpConnection::handleClose() {
 
     printf("fd = %d closed\n", get_fd());
@@ -68,6 +91,9 @@ void TcpConnection::handleClose() {
     loop_->push_functor(std::bind(closeCallback_, this));
 }
 
+void TcpConnection::handleError(){
+
+}
 
 int TcpConnection::get_fd()const{
     return socket_->fd();

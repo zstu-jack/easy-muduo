@@ -30,9 +30,11 @@ void EventLoop::update(int timeout){
             int error_code = 0;
             socklen_t len = (socklen_t) sizeof(error_code);
             getsockopt(event_fd, SOL_SOCKET, SO_ERROR, &error_code, &len);
-            //TODO: close callback
+            error_event_callback_[event_fd]();
         }else if (EPOLLIN & one_event->events){
             read_event_callback_[event_fd]();
+        }else if (EPOLLOUT & one_event->events){
+            write_event_callback_[event_fd]();
         }
     }
     do_pending_functors();
@@ -48,23 +50,41 @@ void EventLoop::push_functor(std::function<void()> func){
     this->pending_functors_.push_back(func);
 }
 
-void EventLoop::updateFd(int fd, ReadEventCallback callback, int events) {
+void EventLoop::addFd(int fd, int event, ReadEventCallback callback, WriteEventCallback writeEventCallback, ErrorEventCallback errorEventCallback){
     assert(fd >= 0);
 
     struct epoll_event epoll_event;
-
-    epoll_event.events = (events == 0 ? (EPOLLIN | EPOLLERR | EPOLLHUP): events);
+    epoll_event.events = event;
     epoll_event.data.ptr = NULL;
     epoll_event.data.fd = fd;
 
     epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_event);
 
     read_event_callback_[fd] = callback;
-
+    write_event_callback_[fd] = writeEventCallback;
+    error_event_callback_[fd] = errorEventCallback;
 }
+
+void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEventCallback writeEventCallback, ErrorEventCallback errorEventCallback) {
+    assert(fd >= 0);
+
+    struct epoll_event epoll_event;
+    epoll_event.events = events;
+    epoll_event.data.ptr = NULL;
+    epoll_event.data.fd = fd;
+
+    epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &epoll_event);
+
+    read_event_callback_[fd] = callback;
+    write_event_callback_[fd] = writeEventCallback;
+    error_event_callback_[fd] = errorEventCallback;
+}
+
 void EventLoop::removeFd(int fd) {
     epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
 
     read_event_callback_.erase(fd);
+    write_event_callback_.erase(fd);
+    error_event_callback_.erase(fd);
 }
 

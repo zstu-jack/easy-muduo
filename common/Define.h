@@ -1,10 +1,13 @@
 #ifndef DEFINE_H
 #define DEFINE_H
 
+#include <functional>
+
 class TcpConnection;
-class RecvData;
 
 typedef std::function<void()> ReadEventCallback;
+typedef std::function<void()> WriteEventCallback;
+typedef std::function<void()> ErrorEventCallback;
 
 typedef std::function<void (const TcpConnection*)> ConnectionCallback;
 typedef std::function<void (const TcpConnection*)> CloseCallback;

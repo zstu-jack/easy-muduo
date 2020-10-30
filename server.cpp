@@ -18,11 +18,18 @@ void onMessage(const TcpConnection* conn, const char* msg, int len){
     // conn->send(msg);
 }
 
-// <0 error
-// =0 wait for remain package.
-// >0 package size.
+// == -1  error
+// >  0   package size.
+// == 0   wait for head.
 int decodeMessage(const char* msg, int len){
-
+    if(len < 4){
+        return 0;
+    }
+    auto pkgSize = ntohl(*(int32_t *) msg);
+    if(pkgSize >= 10240 || pkgSize < 0){ // TODO: drop the connection here.
+        return -1;
+    }
+    return pkgSize;
 }
 
 int main(){
