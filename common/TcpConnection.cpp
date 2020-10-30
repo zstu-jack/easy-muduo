@@ -21,7 +21,9 @@ TcpConnection::~TcpConnection(){
     delete socket_;
 }
 void TcpConnection::send(const void* message, int len){
+
     char* message_ptr = (char*)message;
+    printf("fd = %d, state = %d, send len = %d\n", get_fd(), state_, len);
     if (state_ == kConnected){
         while (len > 0)
         {
@@ -49,11 +51,15 @@ void TcpConnection::forceClose(){
 
 void TcpConnection::handleRead(){
     int n = read(socket_->fd(), read_buf + read_buf_index, socket_buff_size - read_buf_index);
+
+    printf("fd = %d read %d bytes\n", socket_->fd(), n);
+
     if (n > 0){
         int pkg_index = 0;
         read_buf_index += n;
         for(;;){
             int ret = pkgDecodeCallback_(read_buf + pkg_index, read_buf_index - pkg_index);
+            printf("pkgsize=%d, decode ret = %d\n", read_buf_index - pkg_index,  ret);
             if(ret < 0){ // error
                handleClose();
                break;

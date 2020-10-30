@@ -2,6 +2,11 @@ syntax = "proto3";
 
 package test;
 
+enum MSGID {
+    REQ_PLAYER_MESSAGE = 0;
+    INF_PLAYER_MESSAGE = 1;
+}
+
 message ReqPlayerMessage {
     int32 uid = 1;
     string value = 2;

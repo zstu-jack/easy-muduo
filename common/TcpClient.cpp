@@ -22,6 +22,12 @@ TcpClient::~TcpClient()
 
 void TcpClient::connect()
 {
+    if (connection_)
+    {
+        return ;
+    }
+
+
     // client fd.
     int sockfd = createNonBlockSocket();
     // peer addr.
