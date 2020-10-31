@@ -48,11 +48,11 @@ void onConnection(const TcpConnection* conn)
     printf("connecting status = %d, fd = %d\n", (int)conn->connected(), conn->get_fd());
     if (conn->connected())
     {
-        // connected
+        // connected. do something here
     }
     else
     {
-        // disconnected
+        // disconnected. do something here
     }
 }
 
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     client.setConnectionCallback(std::bind(&onConnection,  _1));
     client.setMessageCallback(std::bind(&onMessage, _1, _2, _3));
     client.setPkgDecodeCallback(std::bind(&decodeMessage, _1, _2));
-    //client.setWriteCompleteCallback(std::bind(&onWriteComplete, this, _1));=
+    //client.setWriteCompleteCallback(std::bind(&onWriteComplete, this, _1));                // TODO: add writeCompleteCallback for avoiding endless loop.
     client.connect();
     const int loop_count = 200;
     for(int i = 0; i < loop_count; ++ i){

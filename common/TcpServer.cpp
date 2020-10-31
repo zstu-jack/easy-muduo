@@ -14,7 +14,7 @@ TcpServer::TcpServer(EventLoop* loop, int listen_port){
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = (u_short)htons(listen_port);
     socklen_t addrlen = socklen_t(sizeof(addr));
-    int ret = ::bind(this->socket->fd(), (const sockaddr*) &addr, addrlen);
+    int ret = ::bind(this->socket->fd(), (const sockaddr*) &addr, addrlen);         // TODO: move to Socket.
     assert(ret == 0);
 
 }
@@ -25,12 +25,12 @@ TcpServer::~TcpServer(){
 
 
 void TcpServer::start(){
-    int ret = ::listen(socket->fd(), 1024);
+    int ret = ::listen(socket->fd(), 1024);                        // TODO: listen belongs to Socket. should be called Socket (etc: Socket::listen)
     assert(ret >= 0);
     this->loop_->addFd(socket->fd(), EPOLLIN | EPOLLERR | EPOLLHUP,
             std::bind(&TcpServer::newConnection, this),
             std::bind(&TcpServer::impossibleEvent, this),
-            std::bind(&TcpServer::impossibleEvent, this));
+            std::bind(&TcpServer::impossibleEvent, this));          // TODO: replace impossibleEvent with proper callback.
 }
 
 void TcpServer::newConnection(){

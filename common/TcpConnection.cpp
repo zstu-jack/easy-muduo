@@ -25,7 +25,7 @@ void TcpConnection::send(const void* message, int len){
     char* message_ptr = (char*)message;
     printf("fd = %d, state = %d, send len = %d\n", get_fd(), state_, len);
     if (state_ == kConnected){
-        while (len > 0)
+        while (len > 0) // TODO: add EPOLL_OUT event instead of looping forever.
         {
             int sended_byte = ::send(socket_->fd(), message_ptr, (size_t)len, 0);
             if (sended_byte > 0){
