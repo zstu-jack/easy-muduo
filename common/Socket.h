@@ -15,7 +15,8 @@ public:
     ~Socket();
     int fd() const { return sockfd_; }
     void bindAddress(struct sockaddr_in* addr_);
-    void listen();
+    void bindAddress(int listen_port);
+    void listen(int backlog);
     int accept(struct sockaddr_in* addr_);
     void shutdownWrite();
     void setTcpNoDelay(bool on); //TCP_NODELAY

@@ -8,6 +8,9 @@ class TcpClient{
 public:
     TcpClient(EventLoop *loop, const char* ip, uint16_t port);
     ~TcpClient();
+    TcpClient(const TcpClient&) = delete;
+    TcpClient& operator=(const TcpClient&) = delete;
+
     void connect();
     void disconnect();
 

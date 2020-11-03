@@ -80,7 +80,7 @@ void TcpClient::retry(int sockfd){
 }
 void TcpClient::connecting(int sockfd) {
     // add for polling writing event.
-    printf("connecting, waiting for handshake over, fd = %d\n", sockfd);
+    printf("[TcpClient::%s] [connecting, waiting for handshake over, fd = %d]\n", __func__, sockfd);
     loop_->addFd(sockfd, EPOLLOUT | EPOLLERR,
             std::bind(&TcpClient::impossibleEvent, this, sockfd),
             std::bind(&TcpClient::newConnection, this, sockfd),
@@ -94,7 +94,7 @@ void TcpClient::disconnect()
 
 void TcpClient::newConnection(int sockfd)
 {
-    printf("connected, fd = %d\n", sockfd);
+    printf("[TcpClient::%s][connected, fd = %d]\n",__func__, sockfd);
 
     assert(connection_ == nullptr);
 
@@ -121,8 +121,7 @@ void TcpClient::newConnection(int sockfd)
 
 void TcpClient::removeConnection(const TcpConnection* conn)
 {
-    printf("disconnected, fd = %d\n", conn->get_fd());
-
+    printf("[TcpClient::%s][disconnected, fd = %d]\n", __func__, conn->get_fd());
     if(connection_) {
         loop_->removeFd(conn->get_fd());
         delete connection_;
@@ -137,7 +136,7 @@ void TcpClient::removeConnection(const TcpConnection* conn)
 void TcpClient::impossibleEvent(int sockfd){
     // assert(false);
 
-    close(sockfd);
+    close(sockfd); // remove fd in epoll.
     // loop_->removeFd(sockfd);
     connect();
 }

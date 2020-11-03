@@ -16,20 +16,19 @@ EventLoop::~EventLoop(){
 }
 
 
-
 void EventLoop::update(int timeout){
     do_pending_functors();
-    int event_count = ::epoll_wait(epoll_fd_, event_list_, max_event_size, timeout);
 
+    int event_count = ::epoll_wait(epoll_fd_, event_list_, max_event_size, timeout);
     for(int32_t i = 0; i < event_count; i++) {
         struct epoll_event *one_event = event_list_+i;
         int32_t event_fd = one_event->data.fd;
         assert(read_event_callback_.count(event_fd));
-
         if (EPOLLERR & one_event->events){
             int error_code = 0;
             socklen_t len = (socklen_t) sizeof(error_code);
             getsockopt(event_fd, SOL_SOCKET, SO_ERROR, &error_code, &len);
+            printf("[EventLoop::%s][error_code=%d]\n", __func__, error_code);
             error_event_callback_[event_fd]();
         }else if (EPOLLIN & one_event->events){
             read_event_callback_[event_fd]();
@@ -37,6 +36,7 @@ void EventLoop::update(int timeout){
             write_event_callback_[event_fd]();
         }
     }
+
     do_pending_functors();
 }
 void EventLoop::do_pending_functors(){
@@ -58,7 +58,10 @@ void EventLoop::addFd(int fd, int event, ReadEventCallback callback, WriteEventC
     epoll_event.data.ptr = NULL;
     epoll_event.data.fd = fd;
 
-    epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_event);
+    int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_event);
+    if(ret < 0){
+        printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
+    }
 
     read_event_callback_[fd] = callback;
     write_event_callback_[fd] = writeEventCallback;
@@ -73,7 +76,10 @@ void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEve
     epoll_event.data.ptr = NULL;
     epoll_event.data.fd = fd;
 
-    epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &epoll_event);
+    int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &epoll_event);
+    if(ret < 0) {
+        printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
+    }
 
     read_event_callback_[fd] = callback;
     write_event_callback_[fd] = writeEventCallback;
@@ -81,7 +87,10 @@ void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEve
 }
 
 void EventLoop::removeFd(int fd) {
-    epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
+    int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
+    if(ret < 0) {
+        printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
+    }
 
     read_event_callback_.erase(fd);
     write_event_callback_.erase(fd);

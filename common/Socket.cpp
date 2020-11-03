@@ -14,9 +14,19 @@ void Socket::bindAddress(struct sockaddr_in* addr)
     assert(ret >= 0);
 }
 
-void Socket::listen()
+void Socket::bindAddress(int listen_port){
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = (u_short)htons(listen_port);
+    socklen_t addrlen = socklen_t(sizeof(addr));
+    int ret = ::bind(fd(), (const sockaddr*) &addr, addrlen);
+    assert(ret == 0);
+}
+
+void Socket::listen(int backlog)
 {
-    int ret = ::listen(sockfd_, 128);
+    int ret = ::listen(sockfd_, backlog);
     assert(ret >= 0);
 }
 

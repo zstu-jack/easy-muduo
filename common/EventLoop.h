@@ -12,6 +12,7 @@ class EventLoop{
 public:
     friend class TcpServer;
     friend class TcpClient;
+    friend class TcpConnection;
     EventLoop();
     ~EventLoop();
     EventLoop(const EventLoop&) = delete;

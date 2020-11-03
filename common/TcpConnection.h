@@ -12,9 +12,12 @@ class TcpConnection{
 public:
     TcpConnection(EventLoop* loop, int sockfd, struct sockaddr_in& peerAddr);
     ~TcpConnection();
+    TcpConnection(const TcpConnection&) = delete;
+    TcpConnection& operator=(const TcpConnection&) = delete;
+
     const struct sockaddr_in& peerAddress() const { return peerAddr_; }
     bool connected() const { return state_ == kConnected; }
-    void send(const void* message, int len);
+    void send(const char* message, int len);
     void send(const std::string& message);
     void forceClose();
     void setConnectionCallback(const ConnectionCallback& cb){ connectionCallback_ = cb; }
@@ -28,9 +31,9 @@ public:
     void handleWrite();
     void handleError();
 
-
 public:
     int get_fd() const;
+
 private:
     // common.
     EventLoop* loop_;
@@ -46,10 +49,9 @@ private:
 
     char read_buf[socket_buff_size];
     int read_buf_index = 0;
-    // for server side.
 
-
-    // for client side.
+    char write_buf[socket_buff_size];
+    int write_buf_size = 0;
 };
 
 
