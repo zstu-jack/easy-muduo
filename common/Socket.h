@@ -19,6 +19,8 @@ public:
     void listen(int backlog);
     int accept(struct sockaddr_in* addr_);
     void shutdownWrite();
+
+public:
     void setTcpNoDelay(bool on); //TCP_NODELAY
     void setReuseAddr(bool on);  //SO_REUSEADDR
     void setReusePort(bool on);  //SO_REUSEPORT
@@ -28,6 +30,6 @@ private:
     const int sockfd_;
 };
 
-int createNonBlockSocket();
+int createNonBlockSocket(); // ::socket()
 
 #endif  // SOCKET_H

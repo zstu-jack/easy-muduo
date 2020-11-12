@@ -8,6 +8,17 @@
 
 #include "Define.h"
 
+class EventCallbacks{
+public:
+    ReadEventCallback read_event_callback_;
+    WriteEventCallback write_event_callback_;
+    ErrorEventCallback error_event_callback_;
+    EventCallbacks(ReadEventCallback& rcb, WriteEventCallback& wcb, ErrorEventCallback& ecb);
+    EventCallbacks(const EventCallbacks& callbacks);
+    EventCallbacks& operator=(const EventCallbacks&);
+    EventCallbacks();
+};
+
 class EventLoop{
 public:
     friend class TcpServer;
@@ -26,14 +37,11 @@ private:
     void addFd(int fd, int event,  ReadEventCallback callback, WriteEventCallback writeEventCallback, ErrorEventCallback errorEventCallback);
     void updateFd(int fd, int event,  ReadEventCallback callback, WriteEventCallback writeEventCallback, ErrorEventCallback errorEventCallback);
     void removeFd(int fd);
-
     void do_pending_functors();
 private:
     int epoll_fd_;
     struct epoll_event* event_list_;
-    std::map<int, ReadEventCallback> read_event_callback_;
-    std::map<int, WriteEventCallback> write_event_callback_;
-    std::map<int, ErrorEventCallback> error_event_callback_;
+    std::map<int, EventCallbacks> event_callbacks_;
     std::vector<std::function<void()>> pending_functors_;
 
 };

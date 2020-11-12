@@ -54,7 +54,7 @@ void TcpServer::newConnection(){
     connectionCallback_(tcpConnection);
 }
 void TcpServer::removeConnection(const TcpConnection* conn){
-    printf("[TcpServer::%s] fd = %d\n", conn->get_fd());
+    printf("[TcpServer::%s] fd = %d\n", __func__, conn->get_fd());
 
     int fd = conn->get_fd();
     loop_->removeFd(fd);
@@ -63,5 +63,5 @@ void TcpServer::removeConnection(const TcpConnection* conn){
 }
 
 void TcpServer::impossibleEvent(){
-    printf("something unexpected happened...errno=%d\n", errno);
+    printf("[fd=%d] something unexpected happened...errno=%d\n", socket->fd(), errno);
 }

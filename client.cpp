@@ -45,13 +45,14 @@ std::string packMessage(int msgid, int uin, google::protobuf::Message& message){
 
 void onConnection(const TcpConnection* conn)
 {
-    printf("connecting status = %d, fd = %d\n", (int)conn->connected(), conn->get_fd());
     if (conn->connected())
     {
+        printf("[Main::connected] [fd = %d]\n",  conn->get_fd());
         // connected. do something here
     }
     else
     {
+        printf("[Main::disconnected] [fd = %d]\n", conn->get_fd());
         // disconnected. do something here
     }
 }
@@ -64,13 +65,13 @@ void onMessage(const TcpConnection* conn, const char* msg, int len)
     auto msgId = ntohl(*(uint32_t *) (ptr+4));
     auto uid = ntohl(*(uint32_t *) (ptr+8));
 
-    printf("fd =%d, onMessage uin=%d, msgId=%d pkgSize=%d\n", conn->get_fd(), uid, msgId, pkgSize);
+    printf("[Main::%s] [fd = %d] [uin=%d] [msgId=%d] [pkgSize=%d]\n",__func__, conn->get_fd(), uid, msgId, pkgSize);
 
     switch (msgId){
         case test::MSGID::INF_PLAYER_MESSAGE:{
             test::ReqPlayerMessage req;
             req.ParseFromArray(ptr+12, len-12);
-            printf("recv uid=%d, msg=%s\n", req.uid(), req.value().c_str());
+            printf("[Main::%s] [uid=%d] [msg=%s]\n", __func__, req.uid(), req.value().c_str());
         }
     }
 }
@@ -84,18 +85,21 @@ int main(int argc, char* argv[])
     client.setConnectionCallback(std::bind(&onConnection,  _1));
     client.setMessageCallback(std::bind(&onMessage, _1, _2, _3));
     client.setPkgDecodeCallback(std::bind(&decodeMessage, _1, _2));
-    //client.setWriteCompleteCallback(std::bind(&onWriteComplete, this, _1));                // TODO: add writeCompleteCallback for avoiding endless loop.
+    //client.setWriteCompleteCallback(std::bind(&onWriteComplete, this, _1));
     client.connect();
     const int loop_count = 200;
     for(int i = 0; i < loop_count; ++ i){
         loop.update(loop_time_out_ms);
     }
 
-    //2. send msg
+    //2. send broadcast msg // TODO: check connection state before sending.
     test::ReqPlayerMessage req1;
     req1.set_uid(1);
     req1.set_value("message1");
-    client.connection()->send(packMessage(test::MSGID::REQ_PLAYER_MESSAGE, 1, req1));           // TODO: check connection state before sending.
+    client.connection()->send(packMessage(test::MSGID::REQ_PLAYER_MESSAGE, 1, req1));
+    for(int i = 0; i < loop_count; ++ i){
+        loop.update(loop_time_out_ms);
+    }
 
     //3. another connection
     TcpClient client2(&loop, ip, listen_port);
@@ -107,6 +111,9 @@ int main(int argc, char* argv[])
     for(int i = 0; i < loop_count; ++ i){
         loop.update(loop_time_out_ms);
     }
+
+
+    //4. another connection send broadcast message.
     test::ReqPlayerMessage req2;
     req2.set_uid(1);
     req2.set_value("message2");

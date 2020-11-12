@@ -5,8 +5,24 @@
 
 const int max_event_size = 1024;
 
-EventLoop::EventLoop(){
+EventCallbacks::EventCallbacks(){}
+EventCallbacks::EventCallbacks(ReadEventCallback& rcb, WriteEventCallback& wcb, ErrorEventCallback& ecb){
+    this->read_event_callback_ = rcb;
+    this->write_event_callback_ = wcb;
+    this->error_event_callback_ = ecb;
+}
+EventCallbacks::EventCallbacks(const EventCallbacks& callbacks){
+    this->read_event_callback_ = callbacks.read_event_callback_;
+    this->write_event_callback_ = callbacks.write_event_callback_;
+    this->error_event_callback_ = callbacks.error_event_callback_;
+}
+EventCallbacks& EventCallbacks::operator=(const EventCallbacks& callbacks){
+    this->read_event_callback_ = callbacks.read_event_callback_;
+    this->write_event_callback_ = callbacks.write_event_callback_;
+    this->error_event_callback_ = callbacks.error_event_callback_;
+}
 
+EventLoop::EventLoop(){
     epoll_fd_ = epoll_create(max_event_size);
     assert(epoll_fd_ >= 0);
     event_list_ = (struct epoll_event *) malloc(max_event_size * sizeof(struct epoll_event));
@@ -23,17 +39,17 @@ void EventLoop::update(int timeout){
     for(int32_t i = 0; i < event_count; i++) {
         struct epoll_event *one_event = event_list_+i;
         int32_t event_fd = one_event->data.fd;
-        assert(read_event_callback_.count(event_fd));
+        assert(event_callbacks_.count(event_fd));
         if (EPOLLERR & one_event->events){
             int error_code = 0;
             socklen_t len = (socklen_t) sizeof(error_code);
             getsockopt(event_fd, SOL_SOCKET, SO_ERROR, &error_code, &len);
-            printf("[EventLoop::%s][error_code=%d]\n", __func__, error_code);
-            error_event_callback_[event_fd]();
+            printf("[EventLoop::%s][fd=%d][error_code=%d]\n", __func__, event_fd, error_code);
+            event_callbacks_[event_fd].error_event_callback_();
         }else if (EPOLLIN & one_event->events){
-            read_event_callback_[event_fd]();
+            event_callbacks_[event_fd].read_event_callback_();
         }else if (EPOLLOUT & one_event->events){
-            write_event_callback_[event_fd]();
+            event_callbacks_[event_fd].write_event_callback_();
         }
     }
 
@@ -62,10 +78,8 @@ void EventLoop::addFd(int fd, int event, ReadEventCallback callback, WriteEventC
     if(ret < 0){
         printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
     }
-
-    read_event_callback_[fd] = callback;
-    write_event_callback_[fd] = writeEventCallback;
-    error_event_callback_[fd] = errorEventCallback;
+    event_callbacks_.erase(fd);
+    event_callbacks_.insert(std::make_pair(fd, EventCallbacks(callback, writeEventCallback, errorEventCallback)));
 }
 
 void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEventCallback writeEventCallback, ErrorEventCallback errorEventCallback) {
@@ -80,10 +94,8 @@ void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEve
     if(ret < 0) {
         printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
     }
-
-    read_event_callback_[fd] = callback;
-    write_event_callback_[fd] = writeEventCallback;
-    error_event_callback_[fd] = errorEventCallback;
+    event_callbacks_.erase(fd);
+    event_callbacks_.insert(std::make_pair(fd, EventCallbacks(callback, writeEventCallback, errorEventCallback)));
 }
 
 void EventLoop::removeFd(int fd) {
@@ -91,9 +103,6 @@ void EventLoop::removeFd(int fd) {
     if(ret < 0) {
         printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
     }
-
-    read_event_callback_.erase(fd);
-    write_event_callback_.erase(fd);
-    error_event_callback_.erase(fd);
+    event_callbacks_.erase(fd);
 }
 

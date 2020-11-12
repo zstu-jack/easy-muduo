@@ -28,7 +28,7 @@ void TcpConnection::send(const char* message, int len){
 
     int sended_len = 0;
     if (state_ == kConnected){
-        while (len > 0)
+        while (sended_len < len)
         {
             int sended_byte = ::send(socket_->fd(), message + sended_len, (size_t)len - sended_len, 0);
             sended_len += sended_byte;
@@ -36,13 +36,13 @@ void TcpConnection::send(const char* message, int len){
                 sended_len  += sended_byte;
             }else{  // error occur or peer's buffer is full.
                 if(EAGAIN != errno){ // error occurs.
-                    printf("[%s][errno=%d]\n", __FUNCTION__, errno);
+                    printf("[%s][fd=%d][errno=%d]\n", __FUNCTION__, get_fd(), errno);
                     handleClose();
                     break;
                 }else{ // peer's tcp buffer is full.
                     printf("[TcpConnection::%s][peer is full, waiting for writing(fd=%d)]\n", __func__, get_fd());
-                    int write_buffer_size = socket_buff_size - write_buf_size;
-                    if(write_buffer_size < len - sended_len){ // write buffer is full.
+                    int usable_write_buffer_size = socket_buff_size - write_buf_size;
+                    if(usable_write_buffer_size < len - sended_len){ // write buffer is full.
                         printf("[TcpConnection::%s][write buffer is full][force close here(fd=%d)]\n", __func__, get_fd());
                         handleClose();
                     }else{
@@ -69,7 +69,7 @@ void TcpConnection::forceClose(){
 }
 
 void TcpConnection::handleRead(){
-    int n = read(socket_->fd(), read_buf + read_buf_index, socket_buff_size - read_buf_index); // TODO: remove EPOLL_IN when buffer is full.
+    int n = read(socket_->fd(), read_buf + read_buf_index, socket_buff_size - read_buf_index);
 
     printf("[TcpConnection::%s][fd = %d read %d bytes]\n", __func__, get_fd(), n);
 
@@ -95,6 +95,7 @@ void TcpConnection::handleRead(){
         }
     }
     else if (n == 0){
+        printf("[TcpConnection::%s][fd=%d][peer close]\n", __func__, get_fd());
         handleClose();
     }else{
         if(errno != EAGAIN){
@@ -107,7 +108,7 @@ void TcpConnection::handleRead(){
 void TcpConnection::handleWrite(){
     int sended_len = 0;
     while(sended_len < write_buf_size){
-        int sended_byte = ::send(socket_->fd(), write_buf, write_buf_size, 0);
+        int sended_byte = ::send(socket_->fd(), write_buf + sended_len, write_buf_size - sended_len, 0);
         if(sended_byte > 0){
             sended_len += sended_byte;
         }else {
@@ -131,7 +132,7 @@ void TcpConnection::handleWrite(){
 }
 
 void TcpConnection::handleClose() {
-    printf("[TcpConnection::%s] fd = %d closed\n", __func__, get_fd());
+    printf("[TcpConnection::%s] [fd = %d]\n", __func__, get_fd());
     state_ = kDisconnected;
     connectionCallback_(this);
     loop_->push_functor(std::bind(closeCallback_, this));

@@ -28,7 +28,8 @@ public:
 private:
     void newConnection(int sockfd);
     void removeConnection(const TcpConnection* conn);
-    void impossibleEvent(int sockfd);
+    void impossibleReadEvent(int sockfd);
+    void impossibleErrorEvent(int sockfd);
     void connecting(int sockfd);
     void retry(int sockfd);
 

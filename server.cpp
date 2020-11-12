@@ -40,13 +40,12 @@ std::string packMessage(int msgid, int uin, google::protobuf::Message& message){
 }
 void onConnection(const TcpConnection* conn){
     // you can echo peer's ip and port here.
-    printf("connected = %d, fd = %d\n", conn->connected(), conn->get_fd());
-
     if(conn->connected()){
-
+        printf("[Main::connected] [fd = %d]\n",  conn->get_fd());
     }else{
-        // TODO: disconnected.
+        printf("[Main::disconnected] [fd = %d]\n",  conn->get_fd());
         // conn_to_uid
+        conn_to_uid.erase((TcpConnection*)conn);
     }
 }
 
@@ -60,13 +59,13 @@ void onMessage(const TcpConnection* conn, const char* msg, int len){
         conn_to_uid[(TcpConnection*)conn] = uid;
     }
 
-    printf("onMessgae, uid=%d, msgId=%d, pkgSize=%d\n", uid, msgId, pkgSize);
+    printf("[Main::onMessgae] [uid=%d] [msgId=%d] [pkgSize=%d]\n", uid, msgId, pkgSize);
 
     switch (msgId){
         case test::MSGID::REQ_PLAYER_MESSAGE:{
             test::ReqPlayerMessage req;
             req.ParseFromArray(ptr+12, len-12);
-            printf("recv uid=%d, msg=%s  connections=%d\n", req.uid(), req.value().c_str(), conn_to_uid.size());
+            printf("[Main::onMessage] [recv message] [uid=%d] [msg=%s] [connection's size=%d]\n", req.uid(), req.value().c_str(), conn_to_uid.size());
 
             test::InfPlayerMessage inf;
             inf.set_uid(req.uid());
