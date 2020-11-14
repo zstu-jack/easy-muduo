@@ -20,6 +20,7 @@ EventCallbacks& EventCallbacks::operator=(const EventCallbacks& callbacks){
     this->read_event_callback_ = callbacks.read_event_callback_;
     this->write_event_callback_ = callbacks.write_event_callback_;
     this->error_event_callback_ = callbacks.error_event_callback_;
+    return *this;
 }
 
 EventLoop::EventLoop(){

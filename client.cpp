@@ -22,7 +22,7 @@ int decodeMessage(const char* msg, int len){
         return 0;
     }
     auto pkgSize = ntohl(*(int32_t *) msg);
-    if(pkgSize >= 10240 || pkgSize < 0){ // TODO: drop the connection here.
+    if(pkgSize >= 10240 || pkgSize < 0){
         return -1;
     }
     return pkgSize;
@@ -87,12 +87,11 @@ int main(int argc, char* argv[])
     client.setPkgDecodeCallback(std::bind(&decodeMessage, _1, _2));
     //client.setWriteCompleteCallback(std::bind(&onWriteComplete, this, _1));
     client.connect();
-    const int loop_count = 200;
-    for(int i = 0; i < loop_count; ++ i){
+    do{
         loop.update(loop_time_out_ms);
-    }
+    }while(client.connection() == nullptr);
 
-    //2. send broadcast msg // TODO: check connection state before sending.
+    //2. send broadcast msg
     test::ReqPlayerMessage req1;
     req1.set_uid(1);
     req1.set_value("message1");

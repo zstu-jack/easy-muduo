@@ -111,7 +111,11 @@ void TcpClient::newConnection(int sockfd)
     //conn->setWriteCompleteCallback(writeCompleteCallback_);
     connection_->setCloseCallback(std::bind(&TcpClient::removeConnection, this, _1));
 
-    connectionCallback_(connection_);
+    if(connectionCallback_ != nullptr) {
+        connectionCallback_(connection_);
+    }else{
+        printf("[TcpClient::%s][connected but user-space connection callback is not set, fd = %d]\n",__func__, sockfd);
+    }
 
     loop_->updateFd(sockfd, EPOLLIN | EPOLLERR | EPOLLHUP,
             std::bind(&TcpConnection::handleRead, connection_),

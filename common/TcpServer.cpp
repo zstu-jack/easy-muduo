@@ -21,12 +21,12 @@ TcpServer::~TcpServer(){
     connectionMap_.clear();
 }
 
-void TcpServer::start(){
-    socket->listen(1024);
+void TcpServer::start(int backlog){
+    socket->listen(backlog);
     loop_->addFd(socket->fd(), EPOLLIN | EPOLLERR | EPOLLHUP,
             std::bind(&TcpServer::newConnection, this),
-            std::bind(&TcpServer::impossibleEvent, this),
-            std::bind(&TcpServer::impossibleEvent, this));          // TODO: replace impossibleEvent with proper callback.
+            std::bind(&TcpServer::impossibleWriteEvent, this),
+            std::bind(&TcpServer::impossibleErrorEvent, this));
 }
 
 void TcpServer::newConnection(){
@@ -51,7 +51,12 @@ void TcpServer::newConnection(){
             std::bind(&TcpConnection::handleRead, tcpConnection),
             std::bind(&TcpConnection::handleWrite, tcpConnection),
             std::bind(&TcpConnection::handleError, tcpConnection));
-    connectionCallback_(tcpConnection);
+
+    if(connectionCallback_){
+        connectionCallback_(tcpConnection);
+    } else{
+        printf("[TcpServer::%s][new client connected but user-space connection callback is not set, conn_fd = %d]\n",__func__, conn_fd);
+    }
 }
 void TcpServer::removeConnection(const TcpConnection* conn){
     printf("[TcpServer::%s] fd = %d\n", __func__, conn->get_fd());
@@ -62,6 +67,9 @@ void TcpServer::removeConnection(const TcpConnection* conn){
     connectionMap_.erase(fd);
 }
 
-void TcpServer::impossibleEvent(){
-    printf("[fd=%d] something unexpected happened...errno=%d\n", socket->fd(), errno);
+void TcpServer::impossibleWriteEvent(){
+    printf("TcpServer::%s] [fd=%d] something unexpected happened...errno=%d\n", __func__ ,socket->fd(), errno);
+}
+void TcpServer::impossibleErrorEvent(){
+    printf("TcpServer::%s] [fd=%d] something unexpected happened...errno=%d\n", __func__ ,socket->fd(), errno);
 }

@@ -20,7 +20,7 @@ public:
     TcpServer& operator=(const TcpServer&) = delete;
 
 public:
-    void start(); // add to event loop.
+    void start(int backlog); // add to event loop.
 
 public:
     void setConnectionCallback(const ConnectionCallback& cb){ connectionCallback_ = cb; }
@@ -30,7 +30,8 @@ public:
 private:
     void newConnection();
     void removeConnection(const TcpConnection* conn);
-    void impossibleEvent();
+    void impossibleWriteEvent();
+    void impossibleErrorEvent();
 
 private:
     EventLoop* loop_;

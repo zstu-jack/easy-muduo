@@ -25,6 +25,9 @@ public:
     void setPkgDecodeCallback(const PkgDecodeCallback& cb){ pkgDecodeCallback_ = cb; }
     // void setWriteCompleteCallback(WriteCompleteCallback cb) { writeCompleteCallback_ = std::move(cb); }
 
+public:
+
+
 private:
     void newConnection(int sockfd);
     void removeConnection(const TcpConnection* conn);

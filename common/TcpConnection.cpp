@@ -84,7 +84,11 @@ void TcpConnection::handleRead(){
             }else if(ret == 0 || ret > read_buf_index - pkg_index){ // waiting for a full pkg.
                 break;
             }else{
-                messageCallback_(this, read_buf + pkg_index, ret);
+                if(messageCallback_) {
+                    messageCallback_(this, read_buf + pkg_index, ret);
+                }else{
+                    printf("[TcpClient::%s][receive a package but user-space onMessage callback is not set, fd = %d]\n",__func__, socket_->fd());
+                }
                 pkg_index += ret;
             }
         }
@@ -134,7 +138,10 @@ void TcpConnection::handleWrite(){
 void TcpConnection::handleClose() {
     printf("[TcpConnection::%s] [fd = %d]\n", __func__, get_fd());
     state_ = kDisconnected;
-    connectionCallback_(this);
+
+    if(connectionCallback_) {
+        connectionCallback_(this);
+    }
     loop_->push_functor(std::bind(closeCallback_, this));
 }
 

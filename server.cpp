@@ -9,7 +9,7 @@ bool quit = false;
 
 std::map<TcpConnection*, int> conn_to_uid;
 
-// == -1  error
+// == -1  error, which would lead to close the connection
 // >  0   package size.
 // == 0   wait for head.
 int decodeMessage(const char* msg, int len){
@@ -17,7 +17,7 @@ int decodeMessage(const char* msg, int len){
         return 0;
     }
     auto pkgSize = ntohl(*(int32_t *) msg);
-    if(pkgSize >= 10240 || pkgSize < 0){ // TODO: drop the connection here.
+    if(pkgSize >= 10240 || pkgSize < 0){
         return -1;
     }
     return pkgSize;
@@ -85,7 +85,7 @@ int main(){
     server.setConnectionCallback(std::bind(&onConnection, _1));
     server.setMessageCallback(std::bind(&onMessage, _1, _2, _3));
     server.setPkgDecodeCallback(std::bind(&decodeMessage, _1, _2));
-    server.start();   // enable reading event
+    server.start(1024);   // enable reading event
 
     // main loop.
     do{
