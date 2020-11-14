@@ -91,6 +91,9 @@ void TcpClient::disconnect()
 {
     connection_->forceClose();
 }
+bool TcpClient::connected(){
+    return connection_ != nullptr && this->connection_->connected();
+}
 
 void TcpClient::newConnection(int sockfd)
 {

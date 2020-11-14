@@ -89,14 +89,14 @@ int main(int argc, char* argv[])
     client.connect();
     do{
         loop.update(loop_time_out_ms);
-    }while(client.connection() == nullptr);
+    }while(!client.connected());
 
     //2. send broadcast msg
     test::ReqPlayerMessage req1;
     req1.set_uid(1);
     req1.set_value("message1");
     client.connection()->send(packMessage(test::MSGID::REQ_PLAYER_MESSAGE, 1, req1));
-    for(int i = 0; i < loop_count; ++ i){
+    for(int i = 0; i < 10; ++ i){
         loop.update(loop_time_out_ms);
     }
 
@@ -107,9 +107,9 @@ int main(int argc, char* argv[])
     client2.setPkgDecodeCallback(std::bind(&decodeMessage, _1, _2));
     //client.setWriteCompleteCallback(std::bind(&onWriteComplete, this, _1));=
     client2.connect();
-    for(int i = 0; i < loop_count; ++ i){
+    do{
         loop.update(loop_time_out_ms);
-    }
+    }while(!client2.connected());
 
 
     //4. another connection send broadcast message.

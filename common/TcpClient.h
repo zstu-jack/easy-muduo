@@ -13,11 +13,13 @@ public:
 
     void connect();
     void disconnect();
+    bool connected();
 
     TcpConnection* connection() const {
         return connection_;
     }
     EventLoop *getLoop() const { return loop_; }
+
     bool retry() const { return retry_; }
     void enableRetry() { retry_ = true; }
     void setConnectionCallback(ConnectionCallback cb) { connectionCallback_ = std::move(cb); }
