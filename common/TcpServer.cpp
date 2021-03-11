@@ -34,7 +34,7 @@ void TcpServer::newConnection(){
     struct sockaddr_in peer_addr_;
     int conn_fd = this->socket->accept(&peer_addr_);
 
-    printf("[TcpServer::%s] fd = %d\n", __func__, conn_fd);
+    loop_->log(DETAIL,"fd = %d\n", __func__, conn_fd);
 
     TcpConnection* tcpConnection = new TcpConnection(loop_, conn_fd, peer_addr_);
     connectionMap_[tcpConnection->get_fd()] = tcpConnection;
@@ -55,11 +55,11 @@ void TcpServer::newConnection(){
     if(connectionCallback_){
         connectionCallback_(tcpConnection);
     } else{
-        printf("[TcpServer::%s][new client connected but user-space connection callback is not set, conn_fd = %d]\n",__func__, conn_fd);
+        loop_->log(DETAIL,"[new client connected but user-space connection callback is not set, conn_fd = %d]\n", conn_fd);
     }
 }
 void TcpServer::removeConnection(const TcpConnection* conn){
-    printf("[TcpServer::%s] fd = %d\n", __func__, conn->get_fd());
+    loop_->log(DETAIL,"fd = %d\n", conn->get_fd());
 
     int fd = conn->get_fd();
     loop_->removeFd(fd);
@@ -68,8 +68,8 @@ void TcpServer::removeConnection(const TcpConnection* conn){
 }
 
 void TcpServer::impossibleWriteEvent(){
-    printf("TcpServer::%s] [fd=%d] something unexpected happened...errno=%d\n", __func__ ,socket->fd(), errno);
+    loop_->log(ERROR,"[fd=%d] something unexpected happened...errno=%d\n" ,socket->fd(), errno);
 }
 void TcpServer::impossibleErrorEvent(){
-    printf("TcpServer::%s] [fd=%d] something unexpected happened...errno=%d\n", __func__ ,socket->fd(), errno);
+    loop_->log(ERROR,"[fd=%d] something unexpected happened...errno=%d\n" ,socket->fd(), errno);
 }

@@ -11,6 +11,7 @@ typedef std::function<void()> ErrorEventCallback;
 
 typedef std::function<void (const TcpConnection*)> ConnectionCallback;
 typedef std::function<void (const TcpConnection*)> CloseCallback;
+typedef std::function<void (const TcpConnection*)> HighWaterCallback;
 typedef std::function<void (const TcpConnection*, const char* msg, int len)> MessageCallback;
 
 // <  0: error occurs, close connection.

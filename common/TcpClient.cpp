@@ -80,7 +80,7 @@ void TcpClient::retry(int sockfd){
 }
 void TcpClient::connecting(int sockfd) {
     // add for polling writing event.
-    printf("[TcpClient::%s] [connecting, waiting for handshake over, fd = %d]\n", __func__, sockfd);
+    loop_->log(DETAIL, "[connecting, waiting for handshake over, fd = %d]\n", sockfd);
     loop_->addFd(sockfd, EPOLLOUT | EPOLLERR,
             std::bind(&TcpClient::impossibleReadEvent, this, sockfd),
             std::bind(&TcpClient::newConnection, this, sockfd),
@@ -97,7 +97,7 @@ bool TcpClient::connected(){
 
 void TcpClient::newConnection(int sockfd)
 {
-    printf("[TcpClient::%s][connected, fd = %d]\n",__func__, sockfd);
+    loop_->log(DETAIL, "[connected, fd = %d]\n", sockfd);
 
     assert(connection_ == nullptr);
 
@@ -117,7 +117,7 @@ void TcpClient::newConnection(int sockfd)
     if(connectionCallback_ != nullptr) {
         connectionCallback_(connection_);
     }else{
-        printf("[TcpClient::%s][connected but user-space connection callback is not set, fd = %d]\n",__func__, sockfd);
+        loop_->log(DETAIL, "[connected but user-space connection callback is not set, fd = %d]\n", sockfd);
     }
 
     loop_->updateFd(sockfd, EPOLLIN | EPOLLERR | EPOLLHUP,
@@ -128,7 +128,7 @@ void TcpClient::newConnection(int sockfd)
 
 void TcpClient::removeConnection(const TcpConnection* conn)
 {
-    printf("[TcpClient::%s][disconnected, fd = %d]\n", __func__, conn->get_fd());
+    loop_->log(DETAIL, "[disconnected, fd = %d]\n", conn->get_fd());
     if(conn) {
         loop_->removeFd(conn->get_fd());
         delete conn;
@@ -142,12 +142,12 @@ void TcpClient::removeConnection(const TcpConnection* conn)
 
 void TcpClient::impossibleReadEvent(int sockfd){
     // assert(false);
-    printf("[TcpClient::%s][fd=%d][impossibleReadEvent][errno=%d]\n", __func__, sockfd, errno);
+    loop_->log(FATAL, "[fd=%d][impossibleReadEvent][errno=%d]\n", sockfd, errno);
     removeConnection(this->connection_);
 }
 
 void TcpClient::impossibleErrorEvent(int sockfd){
     // assert(false);
-    printf("[TcpClient::%s][fd=%d][impossibleErrorEvent][errno=%d]\n", __func__, sockfd, errno);
+    loop_->log(FATAL, "[fd=%d][impossibleErrorEvent][errno=%d]\n", sockfd, errno);
     removeConnection(this->connection_);
 }

@@ -3,8 +3,8 @@
 //
 
 #include <bits/stdc++.h>
-#include "common/TcpServer.h"
-#include "common/TcpClient.h"
+#include "../common/TcpServer.h"
+#include "../common/TcpClient.h"
 using namespace std;
 
 int decodeMessage(const char* msg, int len){

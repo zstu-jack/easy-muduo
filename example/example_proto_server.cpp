@@ -1,6 +1,6 @@
 #include <iostream>
-#include "common/EventLoop.h"
-#include "common/TcpServer.h"
+#include "../common/EventLoop.h"
+#include "../common/TcpServer.h"
 #include "protocal/test.pb.h"
 
 const int listen_port = 8080;
@@ -8,6 +8,7 @@ const int loop_time_out_ms = 15;
 bool quit = false;
 
 std::map<TcpConnection*, int> conn_to_uid;
+Logger logger(DETAIL, "server_log");
 
 // == -1  error, which would lead to close the connection
 // >  0   package size.
@@ -59,13 +60,13 @@ void onMessage(const TcpConnection* conn, const char* msg, int len){
         conn_to_uid[(TcpConnection*)conn] = uid;
     }
 
-    printf("[Main::onMessgae] [uid=%d] [msgId=%d] [pkgSize=%d]\n", uid, msgId, pkgSize);
+    logger.log(DETAIL,"[Main::onMessgae] [uid=%d] [msgId=%d] [pkgSize=%d]\n", uid, msgId, pkgSize);
 
     switch (msgId){
         case test::MSGID::REQ_PLAYER_MESSAGE:{
             test::ReqPlayerMessage req;
             req.ParseFromArray(ptr+12, len-12);
-            printf("[Main::onMessage] [recv message] [uid=%d] [msg=%s] [connection's size=%d]\n", req.uid(), req.value().c_str(), conn_to_uid.size());
+            logger.log(WARNING, "[Main::onMessage] [recv message] [uid=%d] [msg=%s] [connection's size=%d]\n", req.uid(), req.value().c_str(), conn_to_uid.size());
 
             test::InfPlayerMessage inf;
             inf.set_uid(req.uid());
@@ -80,6 +81,7 @@ void onMessage(const TcpConnection* conn, const char* msg, int len){
 
 int main(){
     EventLoop loop;
+    loop.set_logger(&logger);
 
     TcpServer server(&loop, listen_port);
     server.setConnectionCallback(std::bind(&onConnection, _1));

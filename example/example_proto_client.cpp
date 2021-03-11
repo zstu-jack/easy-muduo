@@ -6,9 +6,9 @@
 #include <algorithm>
 #include <arpa/inet.h>
 
-#include "common/TcpConnection.h"
-#include "common/TcpClient.h"
-#include "common/EventLoop.h"
+#include "../common/TcpConnection.h"
+#include "../common/TcpClient.h"
+#include "../common/EventLoop.h"
 
 #include "protocal/test.pb.h"
 
@@ -79,6 +79,9 @@ void onMessage(const TcpConnection* conn, const char* msg, int len)
 int main(int argc, char* argv[])
 {
     EventLoop loop;
+
+    Logger logger(DETAIL, "client_log");
+    loop.set_logger(&logger);
 
     //1. connecting
     TcpClient client(&loop, ip, listen_port);

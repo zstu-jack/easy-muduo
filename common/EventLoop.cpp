@@ -2,6 +2,8 @@
 #include "TcpServer.h"
 
 #include <vector>
+#include <stdarg.h>
+
 
 const int max_event_size = 1024;
 
@@ -45,7 +47,7 @@ void EventLoop::update(int timeout){
             int error_code = 0;
             socklen_t len = (socklen_t) sizeof(error_code);
             getsockopt(event_fd, SOL_SOCKET, SO_ERROR, &error_code, &len);
-            printf("[EventLoop::%s][fd=%d][error_code=%d]\n", __func__, event_fd, error_code);
+            log(WARNING, "[fd=%d][error_code=%d]\n", event_fd, error_code);
             event_callbacks_[event_fd].error_event_callback_();
         }else if (EPOLLIN & one_event->events){
             event_callbacks_[event_fd].read_event_callback_();
@@ -77,7 +79,7 @@ void EventLoop::addFd(int fd, int event, ReadEventCallback callback, WriteEventC
 
     int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_event);
     if(ret < 0){
-        printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
+        log(FATAL, "[errno=%d]\n", errno);
     }
     event_callbacks_.erase(fd);
     event_callbacks_.insert(std::make_pair(fd, EventCallbacks(callback, writeEventCallback, errorEventCallback)));
@@ -93,7 +95,7 @@ void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEve
 
     int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &epoll_event);
     if(ret < 0) {
-        printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
+        log(FATAL, "[errno=%d]\n", errno);
     }
     event_callbacks_.erase(fd);
     event_callbacks_.insert(std::make_pair(fd, EventCallbacks(callback, writeEventCallback, errorEventCallback)));
@@ -102,8 +104,22 @@ void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEve
 void EventLoop::removeFd(int fd) {
     int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
     if(ret < 0) {
-        printf("[EventLoop::%s][errno=%d]\n", __func__, errno);
+        log(FATAL, "[errno=%d]\n", errno);
     }
     event_callbacks_.erase(fd);
+}
+
+void EventLoop::set_logger(Logger* logger){
+    this->logger = logger;
+}
+
+void EventLoop::log(int32_t log_level, const char* buffer, ...) {
+    if(logger == nullptr){
+        return ;
+    }
+    va_list ap;
+    va_start(ap, buffer);
+    logger->log(log_level, buffer, ap);
+    va_end(ap);
 }
 
