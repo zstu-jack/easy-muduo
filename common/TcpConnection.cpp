@@ -77,7 +77,7 @@ void TcpConnection::handleRead(){
         int pkg_index = 0;
         read_buf_index += n;
         for(;;){
-            int ret = pkgDecodeCallback_(read_buf + pkg_index, read_buf_index - pkg_index);
+            int ret = pkgDecodeCallback_(this, read_buf + pkg_index, read_buf_index - pkg_index);
             if(ret < 0){ // error
                handleClose();
                break;
@@ -151,6 +151,9 @@ void TcpConnection::handleError(){
 }
 
 int TcpConnection::get_fd()const{
+    if(socket_ == nullptr){
+        return -1;
+    }
     return socket_->fd();
 }
 

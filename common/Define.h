@@ -17,7 +17,7 @@ typedef std::function<void (const TcpConnection*, const char* msg, int len)> Mes
 // <  0: error occurs, close connection.
 // == 0: not enough data for packing a package.
 // >  0: package size
-typedef std::function<int (const char*, int)> PkgDecodeCallback;
+typedef std::function<int (const TcpConnection*, const char*, int)> PkgDecodeCallback;
 
 using namespace std::placeholders;
 

@@ -130,7 +130,10 @@ void TcpClient::removeConnection(const TcpConnection* conn)
 {
     loop_->log(DETAIL, "[disconnected, fd = %d]\n", conn->get_fd());
     if(conn) {
-        loop_->removeFd(conn->get_fd());
+        int fd = conn->get_fd();
+        if (fd >= 0) {
+            loop_->removeFd(fd);
+        }
         delete conn;
         conn = nullptr;
     }

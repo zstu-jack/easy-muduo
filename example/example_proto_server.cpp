@@ -13,7 +13,7 @@ Logger logger(DETAIL, "server_log");
 // == -1  error, which would lead to close the connection
 // >  0   package size.
 // == 0   wait for head.
-int decodeMessage(const char* msg, int len){
+int decodeMessage(const TcpConnection* conn, const char* msg, int len){
     if(len < 4){
         return 0;
     }
@@ -86,7 +86,7 @@ int main(){
     TcpServer server(&loop, listen_port);
     server.setConnectionCallback(std::bind(&onConnection, _1));
     server.setMessageCallback(std::bind(&onMessage, _1, _2, _3));
-    server.setPkgDecodeCallback(std::bind(&decodeMessage, _1, _2));
+    server.setPkgDecodeCallback(std::bind(&decodeMessage, _1, _2, _3));
     server.start(1024);   // enable reading event
 
     // main loop.
