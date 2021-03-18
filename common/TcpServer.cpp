@@ -34,7 +34,7 @@ void TcpServer::newConnection(){
     struct sockaddr_in peer_addr_;
     int conn_fd = this->socket->accept(&peer_addr_);
 
-    loop_->log(DETAIL,"fd = %d\n", __func__, conn_fd);
+    loop_->log(DETAIL,"conn = %s, fd = %d\n", __func__, conn_fd);
 
     TcpConnection* tcpConnection = new TcpConnection(loop_, conn_fd, peer_addr_);
     connectionMap_[tcpConnection->get_fd()] = tcpConnection;
@@ -59,9 +59,8 @@ void TcpServer::newConnection(){
     }
 }
 void TcpServer::removeConnection(const TcpConnection* conn){
-    loop_->log(DETAIL,"fd = %d\n", conn->get_fd());
-
     int fd = conn->get_fd();
+    loop_->log(DETAIL,"removeConnection fd = %d\n", fd);
     loop_->removeFd(fd);
     delete connectionMap_[fd];
     connectionMap_.erase(fd);

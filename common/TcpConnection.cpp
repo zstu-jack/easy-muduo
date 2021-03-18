@@ -136,7 +136,7 @@ void TcpConnection::handleWrite(){
 }
 
 void TcpConnection::handleClose() {
-    loop_->log(DETAIL,"[fd = %d]\n", get_fd());
+    loop_->log(DETAIL,"handleClose [fd = %d]\n", get_fd());
     state_ = kDisconnected;
 
     if(connectionCallback_) {
