@@ -139,7 +139,7 @@ void TcpClient::removeConnection(const TcpConnection* conn)
     state_ = kDisconnected;
 
     if(this->connection_) {
-        loop_->EASY_LOG(DETAIL, "[disconnected, fd = %d]", this->connection_);
+        loop_->EASY_LOG(DETAIL, "[disconnected, fd = %d]", this->connection_->get_fd());
         int fd = this->connection_->get_fd();
         if (fd >= 0) {
             loop_->removeFd(fd);

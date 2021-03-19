@@ -137,6 +137,9 @@ void TcpConnection::handleWrite(){
 
 void TcpConnection::handleClose() {
     loop_->EASY_LOG(DETAIL,"handleClose [fd = %d]", get_fd());
+    if (state_ == kDisconnected){
+        return;
+    }
     state_ = kDisconnected;
 
     if(connectionCallback_) {
