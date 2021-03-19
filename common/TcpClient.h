@@ -45,6 +45,7 @@ private:
     // WriteCompleteCallback writeCompleteCallback_;
     bool retry_;
     TcpConnection* connection_ = nullptr;
+    int sockfd;
     StateE state_;
 
     std::string peer_ip_;

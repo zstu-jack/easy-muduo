@@ -23,16 +23,12 @@ TcpClient::~TcpClient()
 
 void TcpClient::connect()
 {
-    if (connection_)
-    {
-        return ;
-    }
-    if (state_ == kConnecting){
+    if (state_ == kConnecting || state_ == kConnected){
         return;
     }
 
     // client fd.
-    int sockfd = createNonBlockSocket();
+    sockfd = createNonBlockSocket();
     // peer addr.
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
@@ -135,15 +131,11 @@ void TcpClient::newConnection(int sockfd)
 
 void TcpClient::removeConnection(const TcpConnection* conn)
 {
+
     // FIXME: for client, ignore the argument.
     state_ = kDisconnected;
-
     if(this->connection_) {
         loop_->EASY_LOG(DETAIL, "[disconnected, fd = %d]", this->connection_->get_fd());
-        int fd = this->connection_->get_fd();
-        if (fd >= 0) {
-            loop_->removeFd(fd);
-        }
         delete this->connection_;
         this->connection_ = nullptr;
     }
@@ -156,11 +148,13 @@ void TcpClient::removeConnection(const TcpConnection* conn)
 void TcpClient::impossibleReadEvent(int sockfd){
     // assert(false);
     loop_->EASY_LOG(FATAL, "[fd=%d][impossibleReadEvent][errno=%d]", sockfd, errno);
+    close(sockfd);
     removeConnection(this->connection_);
 }
 
 void TcpClient::impossibleErrorEvent(int sockfd){
     // assert(false);
     loop_->EASY_LOG(FATAL, "[fd=%d][impossibleErrorEvent][errno=%d]", sockfd, errno);
+    close(sockfd);
     removeConnection(this->connection_);
 }
