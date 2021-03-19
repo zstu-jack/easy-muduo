@@ -10,6 +10,7 @@ TcpClient::TcpClient(EventLoop* loop, const char* ip, uint16_t port)
     peer_ip_ = std::string(ip);
     peer_port_ = port;
     connection_ = nullptr;
+    state_ = kDisconnected;
 }
 
 TcpClient::~TcpClient()
@@ -26,7 +27,9 @@ void TcpClient::connect()
     {
         return ;
     }
-
+    if (state_ == kConnecting){
+        return;
+    }
 
     // client fd.
     int sockfd = createNonBlockSocket();
@@ -80,7 +83,8 @@ void TcpClient::retry(int sockfd){
 }
 void TcpClient::connecting(int sockfd) {
     // add for polling writing event.
-    loop_->log(DETAIL, "[connecting, waiting for handshake over, fd = %d]\n", sockfd);
+    state_ = kConnecting;
+    loop_->EASY_LOG(DETAIL, "[connecting, waiting for handshake over, fd = %d]", sockfd);
     loop_->addFd(sockfd, EPOLLOUT | EPOLLERR,
             std::bind(&TcpClient::impossibleReadEvent, this, sockfd),
             std::bind(&TcpClient::newConnection, this, sockfd),
@@ -97,9 +101,12 @@ bool TcpClient::connected(){
 
 void TcpClient::newConnection(int sockfd)
 {
-    loop_->log(DETAIL, "[connected, fd = %d]\n", sockfd);
-
-    assert(connection_ == nullptr);
+    loop_->EASY_LOG(DETAIL, "[fd = %d]", sockfd);
+    if (connection_ != nullptr){
+        loop_->EASY_LOG(WARNING, "already connected fd = %d", sockfd);
+        return;
+    }
+    state_ = kConnected;
 
     struct sockaddr_in addr;
     memset(&addr, 0,sizeof(addr));
@@ -117,7 +124,7 @@ void TcpClient::newConnection(int sockfd)
     if(connectionCallback_ != nullptr) {
         connectionCallback_(connection_);
     }else{
-        loop_->log(DETAIL, "[connected but user-space connection callback is not set, fd = %d]\n", sockfd);
+        loop_->EASY_LOG(DETAIL, "[connected but user-space connection callback is not set, fd = %d]", sockfd);
     }
 
     loop_->updateFd(sockfd, EPOLLIN | EPOLLERR | EPOLLHUP,
@@ -128,14 +135,17 @@ void TcpClient::newConnection(int sockfd)
 
 void TcpClient::removeConnection(const TcpConnection* conn)
 {
-    if(conn) {
-        loop_->log(DETAIL, "[disconnected, fd = %d]\n", conn->get_fd());
-        int fd = conn->get_fd();
+    // FIXME: for client, ignore the argument.
+    state_ = kDisconnected;
+
+    if(this->connection_) {
+        loop_->EASY_LOG(DETAIL, "[disconnected, fd = %d]", this->connection_);
+        int fd = this->connection_->get_fd();
         if (fd >= 0) {
             loop_->removeFd(fd);
         }
-        delete conn;
-        conn = nullptr;
+        delete this->connection_;
+        this->connection_ = nullptr;
     }
     if (retry_){
         connect();
@@ -145,12 +155,12 @@ void TcpClient::removeConnection(const TcpConnection* conn)
 
 void TcpClient::impossibleReadEvent(int sockfd){
     // assert(false);
-    loop_->log(FATAL, "[fd=%d][impossibleReadEvent][errno=%d]\n", sockfd, errno);
+    loop_->EASY_LOG(FATAL, "[fd=%d][impossibleReadEvent][errno=%d]", sockfd, errno);
     removeConnection(this->connection_);
 }
 
 void TcpClient::impossibleErrorEvent(int sockfd){
     // assert(false);
-    loop_->log(FATAL, "[fd=%d][impossibleErrorEvent][errno=%d]\n", sockfd, errno);
+    loop_->EASY_LOG(FATAL, "[fd=%d][impossibleErrorEvent][errno=%d]", sockfd, errno);
     removeConnection(this->connection_);
 }

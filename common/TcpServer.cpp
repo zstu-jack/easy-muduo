@@ -8,6 +8,7 @@ TcpServer::TcpServer(EventLoop* loop, int listen_port){
     this->loop_ = loop;
     this->listen_port_ = listen_port;
     this->socket = new Socket(createNonBlockSocket());
+    this->socket->setReuseAddr(true);
     this->socket->bindAddress(listen_port);
 }
 
@@ -34,7 +35,7 @@ void TcpServer::newConnection(){
     struct sockaddr_in peer_addr_;
     int conn_fd = this->socket->accept(&peer_addr_);
 
-    loop_->log(DETAIL,"conn = %s, fd = %d\n", __func__, conn_fd);
+    loop_->EASY_LOG(DETAIL,"conn = %s, fd = %d", __func__, conn_fd);
 
     TcpConnection* tcpConnection = new TcpConnection(loop_, conn_fd, peer_addr_);
     connectionMap_[tcpConnection->get_fd()] = tcpConnection;
@@ -55,20 +56,25 @@ void TcpServer::newConnection(){
     if(connectionCallback_){
         connectionCallback_(tcpConnection);
     } else{
-        loop_->log(DETAIL,"[new client connected but user-space connection callback is not set, conn_fd = %d]\n", conn_fd);
+        loop_->EASY_LOG(DETAIL,"[new client connected but user-space connection callback is not set, conn_fd = %d]\n", conn_fd);
     }
 }
 void TcpServer::removeConnection(const TcpConnection* conn){
     int fd = conn->get_fd();
-    loop_->log(DETAIL,"removeConnection fd = %d\n", fd);
+    loop_->EASY_LOG(DETAIL,"removeConnection fd = %d addr = %x", fd, connectionMap_[fd]);
     loop_->removeFd(fd);
+    auto iter = connectionMap_.find(fd);
+    if (iter == connectionMap_.end()){
+        loop_->EASY_LOG(WARNING,"can't find fd = %d addr = %x", fd);
+        return ;
+    }
     delete connectionMap_[fd];
     connectionMap_.erase(fd);
 }
 
 void TcpServer::impossibleWriteEvent(){
-    loop_->log(ERROR,"[fd=%d] something unexpected happened...errno=%d\n" ,socket->fd(), errno);
+    loop_->EASY_LOG(ERROR,"[fd=%d] something unexpected happened...errno=%d\n" ,socket->fd(), errno);
 }
 void TcpServer::impossibleErrorEvent(){
-    loop_->log(ERROR,"[fd=%d] something unexpected happened...errno=%d\n" ,socket->fd(), errno);
+    loop_->EASY_LOG(ERROR,"[fd=%d] something unexpected happened...errno=%d\n" ,socket->fd(), errno);
 }

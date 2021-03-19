@@ -21,7 +21,7 @@ TcpConnection::~TcpConnection(){
     delete socket_;
 }
 void TcpConnection::send(const char* message, int len){
-    loop_->log(DETAIL, "[fd=%d, state=%d, send_len=%d]\n", get_fd(), state_, len);
+    loop_->EASY_LOG(DETAIL, "[fd=%d, state=%d, send_len=%d]", get_fd(), state_, len);
     if(len == 0){
         return ;
     }
@@ -36,14 +36,14 @@ void TcpConnection::send(const char* message, int len){
                 sended_len  += sended_byte;
             }else{  // error occur or peer's buffer is full.
                 if(EAGAIN != errno){ // error occurs.
-                    loop_->log(DETAIL, "[fd=%d][errno=%d]\n", get_fd(), errno);
+                    loop_->EASY_LOG(DETAIL, "[fd=%d][errno=%d]", get_fd(), errno);
                     handleClose();
                     break;
                 }else{ // peer's tcp buffer is full.
-                    loop_->log(WARNING, "[peer is full, waiting for writing(fd=%d)]\n", get_fd());
+                    loop_->EASY_LOG(WARNING, "[peer is full, waiting for writing(fd=%d)]", get_fd());
                     int usable_write_buffer_size = socket_buff_size - write_buf_size;
                     if(usable_write_buffer_size < len - sended_len){ // write buffer is full.
-                        loop_->log(WARNING, "[write buffer is full][force close here(fd=%d)]\n", get_fd());
+                        loop_->EASY_LOG(WARNING, "[write buffer is full][force close here(fd=%d)]", get_fd());
                         handleClose();
                     }else{
                         memcpy(write_buf+write_buf_size, message+sended_len, len - sended_len);
@@ -58,7 +58,7 @@ void TcpConnection::send(const char* message, int len){
         }
         return ;
     }
-    loop_->log(WARNING, "[not connected]\n");
+    loop_->EASY_LOG(WARNING, "[not connected]");
 }
 void TcpConnection::send(const std::string& message){
     send(message.c_str(), message.length());
@@ -71,7 +71,7 @@ void TcpConnection::forceClose(){
 void TcpConnection::handleRead(){
     int n = read(socket_->fd(), read_buf + read_buf_index, socket_buff_size - read_buf_index);
 
-    loop_->log(DETAIL, "[fd = %d read %d bytes]\n", get_fd(), n);
+    loop_->EASY_LOG(DETAIL, "[fd = %d read %d bytes]", get_fd(), n);
 
     if (n > 0){
         int pkg_index = 0;
@@ -87,7 +87,7 @@ void TcpConnection::handleRead(){
                 if(messageCallback_) {
                     messageCallback_(this, read_buf + pkg_index, ret);
                 }else{
-                    loop_->log(WARNING,"[receive a package but user-space onMessage callback is not set, fd = %d]\n", socket_->fd());
+                    loop_->EASY_LOG(WARNING,"[receive a package but user-space onMessage callback is not set, fd = %d]", socket_->fd());
                 }
                 pkg_index += ret;
             }
@@ -99,11 +99,11 @@ void TcpConnection::handleRead(){
         }
     }
     else if (n == 0){
-        loop_->log(DETAIL,"[fd=%d][peer close]\n", get_fd());
+        loop_->EASY_LOG(DETAIL,"[fd=%d][peer close]", get_fd());
         handleClose();
     }else{
         if(errno != EAGAIN){
-            loop_->log(WARNING, "[TcpConnection::%s][errno=%d]\n", errno);
+            loop_->EASY_LOG(WARNING, "[TcpConnection::%s][errno=%d]", errno);
             handleClose();
         }
     }
@@ -117,7 +117,7 @@ void TcpConnection::handleWrite(){
             sended_len += sended_byte;
         }else {
             if(EAGAIN != errno){ // error occurs.
-                loop_->log(WARNING,"[errno=%d]\n", errno);
+                loop_->EASY_LOG(WARNING,"[errno=%d]", errno);
                 handleClose();
             }else{ // peer's tcp buffer is full.
                 if(sended_len) {
@@ -136,7 +136,7 @@ void TcpConnection::handleWrite(){
 }
 
 void TcpConnection::handleClose() {
-    loop_->log(DETAIL,"handleClose [fd = %d]\n", get_fd());
+    loop_->EASY_LOG(DETAIL,"handleClose [fd = %d]", get_fd());
     state_ = kDisconnected;
 
     if(connectionCallback_) {
@@ -146,7 +146,7 @@ void TcpConnection::handleClose() {
 }
 
 void TcpConnection::handleError(){
-    loop_->log(DETAIL,"[fd=%d]\n", get_fd());
+    loop_->EASY_LOG(DETAIL,"fd=%d", get_fd());
     handleClose();
 }
 

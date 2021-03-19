@@ -18,10 +18,9 @@ void Logger::log(int32_t log_level, const std::string& log_str)
         m_last_date = now_date;
         open_file(now_date);
     }
-    std::string message;
-    message = log_level_string[log_level] + message;
+    std::string message = log_level_string[log_level];
     message += "[" + timestamp() + "] ";
-    message += log_str;
+    message += log_str ;
     m_logfile << message;
     m_logfile.flush();
 }

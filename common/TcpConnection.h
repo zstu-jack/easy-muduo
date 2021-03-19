@@ -38,7 +38,6 @@ private:
     // common.
     EventLoop* loop_;
     Socket* socket_;
-    enum StateE { kDisconnected, kConnected, kConnecting };
     StateE state_;
     struct sockaddr_in peerAddr_;
     ConnectionCallback connectionCallback_;

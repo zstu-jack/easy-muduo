@@ -27,7 +27,10 @@ EventCallbacks& EventCallbacks::operator=(const EventCallbacks& callbacks){
 
 EventLoop::EventLoop(){
     epoll_fd_ = epoll_create(max_event_size);
-    assert(epoll_fd_ >= 0);
+    if(epoll_fd_ < 0){
+        logger->log(FATAL, "epoll_create failed");
+        assert(false);
+    }
     event_list_ = (struct epoll_event *) malloc(max_event_size * sizeof(struct epoll_event));
 }
 EventLoop::~EventLoop(){
@@ -47,7 +50,7 @@ void EventLoop::update(int timeout){
             int error_code = 0;
             socklen_t len = (socklen_t) sizeof(error_code);
             getsockopt(event_fd, SOL_SOCKET, SO_ERROR, &error_code, &len);
-            log(WARNING, "[fd=%d][error_code=%d]\n", event_fd, error_code);
+            EASY_LOG(WARNING, "[fd=%d][error_code=%d]", event_fd, error_code);
             event_callbacks_[event_fd].error_event_callback_();
         }else if (EPOLLIN & one_event->events){
             event_callbacks_[event_fd].read_event_callback_();
@@ -70,7 +73,10 @@ void EventLoop::push_functor(std::function<void()> func){
 }
 
 void EventLoop::addFd(int fd, int event, ReadEventCallback callback, WriteEventCallback writeEventCallback, ErrorEventCallback errorEventCallback){
-    assert(fd >= 0);
+    if(fd < 0){
+        EASY_LOG(WARNING, "fd < 0, fd = %d", fd);
+        return ;
+    }
 
     struct epoll_event epoll_event;
     epoll_event.events = event;
@@ -79,7 +85,7 @@ void EventLoop::addFd(int fd, int event, ReadEventCallback callback, WriteEventC
 
     int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_event);
     if(ret < 0){
-        log(FATAL, "[errno=%d]\n", errno);
+        EASY_LOG(FATAL, "[errno=%d]", errno);
     }
     event_callbacks_.erase(fd);
     event_callbacks_.insert(std::make_pair(fd, EventCallbacks(callback, writeEventCallback, errorEventCallback)));
@@ -95,7 +101,7 @@ void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEve
 
     int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &epoll_event);
     if(ret < 0) {
-        log(FATAL, "[errno=%d]\n", errno);
+        EASY_LOG(FATAL, "[errno=%d]", errno);
     }
     event_callbacks_.erase(fd);
     event_callbacks_.insert(std::make_pair(fd, EventCallbacks(callback, writeEventCallback, errorEventCallback)));
@@ -104,7 +110,7 @@ void EventLoop::updateFd(int fd,int events, ReadEventCallback callback, WriteEve
 void EventLoop::removeFd(int fd) {
     int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
     if(ret < 0) {
-        log(FATAL, "[errno=%d]\n", errno);
+        EASY_LOG(FATAL, "[errno=%d]", errno);
     }
     event_callbacks_.erase(fd);
 }
