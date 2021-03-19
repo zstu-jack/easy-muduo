@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include "Socket.h"
+#include "EventLoop.h"
 
 Socket::~Socket(){
     close(sockfd_);
@@ -77,6 +78,9 @@ void Socket::setKeepAlive(bool on)
 
 int createNonBlockSocket(){
     int sockfd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
+    if(sockfd < 0){
+        printf("err = %s\n", strerror(errno));
+    }
     assert(sockfd >= 0);
     return sockfd;
 }
