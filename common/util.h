@@ -8,4 +8,5 @@
 
 std::string string_format(const char* fmt_str, va_list vl);
 
+
 #endif //UTIL_H
