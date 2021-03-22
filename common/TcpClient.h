@@ -43,9 +43,13 @@ private:
     MessageCallback messageCallback_;
     PkgDecodeCallback pkgDecodeCallback_;
     // WriteCompleteCallback writeCompleteCallback_;
-    bool retry_;
+
     TcpConnection* connection_ = nullptr;
+
+    // Connector.
+    bool retry_;
     int sockfd;
+    int connect_;   // = 1 for user wanna connect, 0 for user disconnect.
     StateE state_;
 
     std::string peer_ip_;

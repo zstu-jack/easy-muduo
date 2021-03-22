@@ -27,6 +27,8 @@ void TcpClient::connect()
         return;
     }
 
+    connect_ = 1;
+
     // client fd.
     sockfd = createNonBlockSocket();
     // peer addr.
@@ -74,6 +76,7 @@ void TcpClient::connect()
 }
 
 void TcpClient::retry(int sockfd){
+    // FIXME: retry next tick or retry with a delay.
     close(sockfd);
     connect();
 }
@@ -89,7 +92,10 @@ void TcpClient::connecting(int sockfd) {
 
 void TcpClient::disconnect()
 {
-    connection_->forceClose();
+    connect_ = 0;
+    if(this->connection_) {
+        connection_->forceClose();
+    }
 }
 bool TcpClient::connected(){
     return connection_ != nullptr && this->connection_->connected();
@@ -139,7 +145,7 @@ void TcpClient::removeConnection(const TcpConnection* conn)
         delete this->connection_;
         this->connection_ = nullptr;
     }
-    if (retry_){
+    if (retry_ && connect_){
         connect();
     }
 }
