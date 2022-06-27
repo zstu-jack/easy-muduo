@@ -76,7 +76,7 @@ void TcpConnection::handleRead(){
     if (n > 0){
         int pkg_index = 0;
         read_buf_index += n;
-        for(;;){
+        for(;read_buf_index - pkg_index > 0;){
             int ret = pkgDecodeCallback_(this, read_buf + pkg_index, read_buf_index - pkg_index);
             if(ret < 0){ // error
                handleClose();
